@@ -306,11 +306,11 @@ Namespace My.Sys.Forms
 			#ifdef __USE_GTK__
 				FText = WStr(*gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(widget)))
 			#else
-				If This.ItemIndex > -1 Then
-					FText = This.Item(This.ItemIndex)
-				Else
+				'If This.ItemIndex > -1 Then
+				'	FText = This.Item(This.ItemIndex)
+				'Else
 					Base.Text
-				End If
+				'End If
 			#endif
 		End If
 		Return WGet(FText.vptr)
