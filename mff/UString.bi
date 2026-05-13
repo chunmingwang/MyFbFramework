@@ -54,14 +54,12 @@ Public:
 	Declare Function TrimStart As UString
 	Declare Function ToLower As UString
 	Declare Function ToUpper As UString
-	'When expression Is empty, uses FreeBASIC's native Mid function,extracts a portion of the string,
-	'In-place replacement: When expression is provided, replaces the specified SubString range With the New larger text
-	'Example: Dim As UString testStr = "Hello World" : Dim As UString result = testStr.SubString(7, 5, "FreeBasic") (Expected: 'Hello FreeBasic')
 	Declare Function SubString(ByVal start As Integer, ByVal n As Integer, ByRef expression As Const WString = "") As UString
 	
 	m_Length As Integer
 	m_BufferLen As Integer
 	m_BytesCount As Integer
+	m_Capacity As Integer
 	m_Data As WString Ptr
 	m_Owner As Any Ptr
 	OnChange As Sub(ByRef Sender As UString)
@@ -80,11 +78,12 @@ Declare Function WGet(ByRef subject As WString Ptr) ByRef As WString
 	Declare Sub WReAllocate(ByRef subject As WString Ptr, lLen As Integer)
 	Declare Sub WLet(ByRef subject As WString Ptr, ByRef txt As WString)
 	Declare Sub WLetEx(ByRef subject As WString Ptr, ByRef txt As WString, ByVal tmpPara As Boolean = False)
-	Declare Sub WAdd(ByRef subject As WString Ptr, ByRef txt As WString, AddBefore As Boolean = False)
+	'Minimal allocation mode, Capacity represents remaining space. Mustbe reset Capacity = 0 after using the WLet function.
+	Declare Sub WAdd(ByRef subject As WString Ptr, ByRef txt As WString, AddBefore As Boolean = False, ByRef Capacity As Integer = 0)
 	Declare Sub WDeAllocate (ByRef subject As WString Ptr)
 	Declare Sub ZLet(ByRef subject As ZString Ptr, ByRef txt As ZString)
 	Declare Sub ZDeAllocate(ByRef subject As ZString Ptr)
-	Declare Sub ZAdd(ByRef subject As ZString Ptr, ByRef txt As ZString, AddBefore As Boolean = False)
+	Declare Sub ZAdd(ByRef subject As ZString Ptr, ByRef txt As ZString, AddBefore As Boolean = False, ByRef Capacity As Integer = 0)
 	Declare Sub ZLetEx(ByRef subject As ZString Ptr, ByRef txt As ZString, ByVal tmpPara As Boolean = False)
 #endif
 Declare Sub WDeAllocateEx(subject() As WString Ptr)

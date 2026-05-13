@@ -10,6 +10,7 @@ Private Constructor UString()
 	m_Length = 0
 	m_BytesCount = SizeOf(WString) * GrowLength
 	m_Data = _Allocate(SizeOf(WString))
+	m_Capacity = 0
 	If m_Data <> 0 Then
 		m_Data[0] = 0
 	Else
@@ -22,6 +23,7 @@ Private Constructor UString(ByRef Value As WString)
 	m_Length = Len(Value)
 	m_BytesCount = (m_Length + 1) * SizeOf(WString) * GrowLength
 	m_Data = _Allocate(m_BytesCount)
+	m_Capacity = 0
 	If m_Data <> 0 Then
 		Fb_MemCopy((*m_Data)[0], Value[0], m_Length * SizeOf(WString) * GrowLength)
 		(*m_Data)[m_Length] = 0
@@ -35,6 +37,7 @@ Private Constructor UString(ByRef Value As String)
 	m_Length = Len(Value)
 	m_BytesCount = (m_Length + 1) * SizeOf(WString) * GrowLength
 	m_BufferLen = m_Length * 2
+	m_Capacity = 0
 	m_Data = _CAllocate(m_BytesCount)
 	If m_Data <> 0 Then
 		*m_Data = Value
@@ -50,6 +53,7 @@ Private Constructor UString(ByRef Value As ZString)
 	m_Length = Len(Value)
 	m_BytesCount = (m_Length + 1) * SizeOf(WString) * GrowLength
 	m_BufferLen = m_Length * 2
+	m_Capacity = 0
 	m_Data = _CAllocate(m_BytesCount)
 	If m_Data <> 0 Then
 		*m_Data = Value
@@ -65,6 +69,7 @@ Private Constructor UString(ByRef Value As UString)
 	m_Length = Value.m_Length
 	m_BytesCount = Value.m_BytesCount
 	m_Data = _Allocate(m_BytesCount)
+	m_Capacity = 0
 	If m_Data <> 0 Then
 		Fb_MemCopy((*m_Data)[0], (* (Value.m_Data))[0], m_Length * SizeOf(WString) * GrowLength)
 		(*m_Data)[m_Length] = 0
@@ -171,6 +176,7 @@ Private Function UString.SubString(ByVal start As Integer, ByVal n As Integer, B
 		m_Data = ResultPtr
 		m_Length = newLength
 		m_BytesCount = newSize
+		m_Capacity = 0
 		(*m_Data)[m_Length] = 0
 		If OnChange Then OnChange(This)
 		Return This
@@ -250,63 +256,85 @@ End Function
 	End Sub
 	
 	#ifndef WAdd_Off
-		Private Sub WAdd(ByRef subject As WString Ptr, ByRef txt As WString, AddBefore As Boolean = False)
-			Dim As Long ls = Len(txt)
-			If ls = 0 Then Return 'subject
-			Dim As Long oldLen = 0
+		'Minimal allocation mode, Capacity represents remaining space. Mustbe reset Capacity = 0 after using the WLet function.
+		Private Sub WAdd(ByRef subject As WString Ptr, ByRef txt As WString, AddBefore As Boolean = False, ByRef Capacity As Integer = 0)
+			Dim As Integer ls = Len(txt)
+			If ls = 0 Then Return
+			Dim As Integer oldLen = 0
 			If subject <> 0 Then oldLen = Len(*subject)
-			Dim As WString Ptr ResultPtr
-			Dim As Long newLen = oldLen + ls
-			If AddBefore AndAlso subject <> 0 Then
-				ResultPtr = _Allocate((newLen + 1) * SizeOf(WString) * GrowLength)
-				If ResultPtr = 0 Then Print  __FUNCTION__ & " (Line " & __LINE__ & ") " & "Memory was not allocated." & txt : Return
-				Fb_MemCopy((*ResultPtr)[0], txt[0], ls * SizeOf(WString) * GrowLength)
-				If oldLen > 0 Then Fb_MemCopy((*ResultPtr)[ls], (*subject)[0], oldLen * SizeOf(WString) * GrowLength)
-				(*ResultPtr)[newLen] = 0
-				If subject <> 0 AndAlso subject <> ResultPtr Then _Deallocate(subject)
-			Else
-				If subject <> 0 Then
-					ResultPtr = _Reallocate(subject, (newLen + 1) * SizeOf(WString) * GrowLength)
-					If ResultPtr = 0 Then Print  __FUNCTION__ & " (Line " & __LINE__ & ") " & "Memory was not allocated." & txt : Return
-					Fb_MemCopy((*ResultPtr)[oldLen], txt[0], ls * SizeOf(WString) * GrowLength)
-					(*ResultPtr)[newLen] = 0
+			Dim As Integer newLen = oldLen + ls
+			If ls <= Capacity AndAlso subject <> 0 Then
+				If AddBefore AndAlso oldLen > 0 Then
+					Fb_MemMove((*subject)[ls], (*subject)[0], oldLen * SizeOf(WString))
+					Fb_MemCopy((*subject)[0], txt[0], ls * SizeOf(WString))
 				Else
-					ResultPtr = _Allocate((ls + 1) * SizeOf(WString) * GrowLength)
-					If ResultPtr = 0 Then Print  __FUNCTION__ & " (Line " & __LINE__ & ") " & "Memory was not allocated." & txt : Return
-					Fb_MemCopy((*ResultPtr)[0], txt[0], ls * SizeOf(WString) * GrowLength)
-					(*ResultPtr)[ls] = 0
+					Fb_MemCopy((*subject)[oldLen], txt[0], ls * SizeOf(WString))
 				End If
+				(*subject)[newLen] = 0
+				Capacity -= ls
+				Return
 			End If
+			Dim As Integer newCapacity = newLen * 2
+			If newCapacity < 512 Then newCapacity = 512
+			If Capacity < 1 Then newCapacity = newLen + 1 ' 精确容量模式回退
+			Capacity = newCapacity - newLen  'Minimal allocation mode, Capacity represents remaining space. Capacity 表示*剩余*空间！
+			Dim As WString Ptr ResultPtr
+			If subject <> 0 Then
+				ResultPtr = _Reallocate(subject, (newCapacity + 1) * SizeOf(WString))
+				If ResultPtr = 0 Then Print __FUNCTION__ & " (Line " & __LINE__ & ") " & "Memory was not allocated." & Left(txt, 50)  : Return
+				If AddBefore AndAlso oldLen > 0 Then
+					Fb_MemMove((*ResultPtr)[ls], (*ResultPtr)[0], oldLen * SizeOf(WString))
+					Fb_MemCopy((*ResultPtr)[0], txt[0], ls *SizeOf(WString))
+				Else
+					Fb_MemCopy((*ResultPtr)[oldLen], txt[0], ls*SizeOf(WString))
+				End If
+			Else
+				ResultPtr = _Allocate((newCapacity + 1) * SizeOf(WString))
+				If ResultPtr = 0 Then Print __FUNCTION__ & " (Line " & __LINE__ & ") " & "Memory was not allocated." & Left(txt, 50)  : Return
+				Fb_MemCopy((*ResultPtr)[0], txt[0], ls * SizeOf(WString))
+			End If
+			(*ResultPtr)[newLen] = 0
 			subject = ResultPtr
 		End Sub
 		
-		Private Sub ZAdd(ByRef subject As ZString Ptr, ByRef txt As ZString, AddBefore As Boolean = False)
-			Dim As Long ls = Len(txt)
+		'Minimal allocation mode, Capacity represents remaining space. Mustbe reset Capacity = 0 after using the WLet function.
+		Private Sub ZAdd(ByRef subject As ZString Ptr, ByRef txt As ZString, AddBefore As Boolean = False, ByRef Capacity As Integer = 0)
+			Dim As Integer ls = Len(txt)
 			If ls = 0 Then Return
-			Dim As Long oldLen = 0
+			Dim As Integer oldLen = 0
 			If subject <> 0 Then oldLen = Len(*subject)
-			Dim As ZString Ptr ResultPtr
-			Dim As Long newLen = oldLen + ls
-			If AddBefore AndAlso subject <> 0 Then
-				ResultPtr = _Allocate((newLen + 1) * SizeOf(ZString) * GrowLength)
-				If ResultPtr = 0 Then Print  __FUNCTION__ & " (Line " & __LINE__ & ") " & "Memory was not allocated." & txt : Return
-				Fb_MemCopy((*ResultPtr)[0], txt[0], ls * SizeOf(ZString))
-				If oldLen > 0 Then Fb_MemCopy((*ResultPtr)[ls], (*subject)[0], oldLen * SizeOf(ZString) * GrowLength)
-				(*ResultPtr)[newLen] = 0
-				If subject <> 0 AndAlso subject <> ResultPtr Then _Deallocate(subject)
-			Else
-				If subject <> 0 Then
-					ResultPtr = _Reallocate(subject, (newLen + 1) * SizeOf(ZString) * GrowLength)
-					If ResultPtr = 0 Then Print  __FUNCTION__ & " (Line " & __LINE__ & ") " & "Memory was not allocated." & txt : Return
-					Fb_MemCopy((*ResultPtr)[oldLen], txt[0], ls * SizeOf(WString) * GrowLength)
-					(*ResultPtr)[newLen] = 0
+			Dim As Integer newLen = oldLen + ls
+			If ls <= Capacity AndAlso subject <> 0 Then
+				If AddBefore AndAlso oldLen > 0 Then
+					Fb_MemMove((*subject)[ls], (*subject)[0], oldLen * SizeOf(ZString))
+					Fb_MemCopy((*subject)[0], txt[0], ls * SizeOf(ZString))
 				Else
-					ResultPtr = _Allocate((ls + 1) * SizeOf(ZString) * GrowLength)
-					If ResultPtr = 0 Then Print  __FUNCTION__ & " (Line " & __LINE__ & ") " & "Memory was not allocated." & txt : Return
-					Fb_MemCopy((*ResultPtr)[0], txt[0], ls * SizeOf(ZString) * GrowLength)
-					(*ResultPtr)[ls] = 0
+					Fb_MemCopy((*subject)[oldLen], txt[0], ls * SizeOf(ZString))
 				End If
+				(*subject)[newLen] = 0
+				Capacity -= ls
+				Return
 			End If
+			Dim As Integer newCapacity = newLen * 2
+			If newCapacity < 512 Then newCapacity = 512
+			If Capacity < 1 Then newCapacity = newLen + 1 ' 精确容量模式回退
+			Capacity = newCapacity - newLen  '“最小化分配”模式，Capacity 表示*剩余*空间！
+			Dim As ZString Ptr ResultPtr
+			If subject <> 0 Then
+				ResultPtr = _Reallocate(subject, (newCapacity + 1) * SizeOf(ZString))
+				If ResultPtr = 0 Then Print __FUNCTION__ & " (Line " & __LINE__ & ") " & "Memory was not allocated." & Left(txt, 50)  : Return
+				If AddBefore AndAlso oldLen > 0 Then
+					Fb_MemMove((*ResultPtr)[ls], (*ResultPtr)[0], oldLen * SizeOf(ZString))
+					Fb_MemCopy((*ResultPtr)[0], txt[0], ls *SizeOf(ZString))
+				Else
+					Fb_MemCopy((*ResultPtr)[oldLen], txt[0], ls*SizeOf(ZString))
+				End If
+			Else
+				ResultPtr = _Allocate((newCapacity + 1) * SizeOf(ZString))
+				If ResultPtr = 0 Then Print __FUNCTION__ & " (Line " & __LINE__ & ") " & "Memory was not allocated." & Left(txt, 50)  : Return
+				Fb_MemCopy((*ResultPtr)[0], txt[0], ls * SizeOf(ZString))
+			End If
+			(*ResultPtr)[newLen] = 0
 			subject = ResultPtr
 		End Sub
 	#endif
@@ -361,14 +389,23 @@ Private Sub UString.Resize(NewLength As Integer)
 End Sub
 
 Private Function UString.AppendBuffer(ByVal addrMemory As Any Ptr, ByVal NumBytes As ULong) As Boolean
-	This.Resize(m_Length + NumBytes)
-	If m_Data = 0 Then Return False
+	If m_Data = 0 OrElse NumBytes < 1 Then Return False
+	Dim As Integer newLen = m_Length + NumBytes
+	If NumBytes > m_Capacity Then
+		Dim As Integer newCapacity = newLen * 2
+		If newCapacity < 16 Then newCapacity = 16
+		If m_Capacity < 1 Then newCapacity = newLen + 1 ' 精确容量模式回退
+		m_Capacity = newCapacity - newLen  '“最小化分配”模式，Capacity 表示*剩余*空间！
+		This.Resize(newCapacity)
+	Else
+		m_Capacity -= NumBytes
+	End If
 	#ifdef __USE_WINAPI__
 		memcpy(m_Data + m_BufferLen, addrMemory, NumBytes)
 	#else
 		Fb_MemCopy(* (m_Data + m_BufferLen), addrMemory, NumBytes)
 	#endif
-	(*m_Data)[m_Length + NumBytes] = 0
+	(*m_Data)[newLen] = 0
 	m_BufferLen += NumBytes
 	Return True
 End Function
@@ -384,6 +421,7 @@ Private Operator UString.Let(ByRef lhs As UString)
 		m_Length = lhs.m_Length
 		m_BytesCount = lhs.m_BytesCount
 		m_BufferLen = lhs.m_BufferLen
+		m_Capacity = 0
 		Dim As WString Ptr ResultPtr = _Allocate(m_BytesCount)
 		If ResultPtr = 0 Then Print  __FUNCTION__ & " (Line " & __LINE__ & ") " & "Memory was not allocated." : Return
 		Fb_MemCopy((*ResultPtr)[0], (*lhs.m_Data)[0], m_Length * SizeOf(WString) * GrowLength)
@@ -398,6 +436,7 @@ Private Operator UString.Let(ByRef lhs As WString)
 	m_Length = Len(lhs)
 	m_BytesCount = (m_Length + 1) * SizeOf(WString) * GrowLength
 	m_BufferLen = m_Length * 2
+	m_Capacity = 0
 	Dim As WString Ptr ResultPtr = _Allocate(m_BytesCount)
 	If ResultPtr = 0 Then Print  __FUNCTION__ & " (Line " & __LINE__ & ") " & "Memory was not allocated." : Return
 	Fb_MemCopy((*ResultPtr)[0], lhs[0], m_Length * SizeOf(WString) * GrowLength)
@@ -411,6 +450,7 @@ Private Operator UString.Let(ByRef lhs As Const ZString)
 	m_Length = Len(lhs)
 	m_BytesCount = (m_Length + 1) * SizeOf(WString) * GrowLength
 	m_BufferLen = m_Length * 2
+	m_Capacity = 0
 	Dim As WString Ptr ResultPtr = _CAllocate(m_BytesCount)
 	If ResultPtr = 0 Then Print  __FUNCTION__ & " (Line " & __LINE__ & ") " & "Memory was not allocated." : Return
 	*ResultPtr = lhs
@@ -426,6 +466,7 @@ Private Operator UString.Let(ByRef lhs As String)
 	m_Length = Len(lhs)
 	m_BytesCount = (m_Length + 1) * SizeOf(WString) * GrowLength
 	m_BufferLen = m_Length * 2
+	m_Capacity = 0
 	Dim As WString Ptr ResultPtr = _CAllocate(m_BytesCount)
 	If ResultPtr = 0 Then Print  __FUNCTION__ & " (Line " & __LINE__ & ") " & "Memory was not allocated." : Return
 	*ResultPtr = lhs
@@ -559,6 +600,7 @@ End Function
 			WLet(original, LCase(Expression))
 			WLet(find, LCase(FindingText))
 		End If
+		If original = 0 OrElse find = 0 Then CountReplaced = 0:Return Expression
 		Dim As Integer i, j, ln, lnp, countof, num
 		ln = Len(*original) * GrowLength: 'If ln = 0 Then Return 0
 		lnp = Len(*find) * GrowLength: 'If lnp = 0 Then Return 0
@@ -578,7 +620,13 @@ End Function
 			Loop Until i >= ln - 1
 		End If
 		Var t = countof 'tallynumW(*original, *find)                 'find occurencies of find
-		If t = 0 Then CountReplaced = 0: Return Expression
+		If t = 0 Then
+			If Not MatchCase Then
+				WDeAllocate(original)
+				WDeAllocate(find)
+			End If
+			CountReplaced = 0: Return Expression
+		End If
 		Dim As Long found, n, staid, m, c
 		Var Lf = Len(FindingText) * GrowLength, Lr = Len(ReplacingText) * GrowLength, Lo = Len(Expression) * GrowLength
 		t = Len(Expression) * GrowLength - t * Lf + t * Lr               'length of output string
