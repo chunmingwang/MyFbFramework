@@ -21,7 +21,7 @@ Namespace My.Sys.Forms
 		
 	Private:
 		FAbort As Boolean
-		FPort As Integer = 80
+		FPort As Integer
 		FUseSSL As Boolean
 		FUseSSLExplicitlySet As Boolean
 	Public:
