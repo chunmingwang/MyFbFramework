@@ -21,6 +21,9 @@ Namespace My.Sys.Forms
 		
 	Private:
 		FAbort As Boolean
+		FPort As Integer
+		FUseSSL As Boolean
+		FUseSSLExplicitlySet As Boolean
 	Public:
 		#ifndef ReadProperty_Off
 			Declare Function ReadProperty(ByRef PropertyName As String) As Any Ptr
@@ -31,9 +34,12 @@ Namespace My.Sys.Forms
 		'Get or set request cancellation.
 		Declare Property Abort As Boolean
 		Declare Property Abort(Value As Boolean)
+		Declare Property Port As Integer
+		Declare Property Port(Value As Integer)
+		Declare Property UseSSL As Boolean
+		Declare Property UseSSL(Value As Boolean)
 		
 		As String Host = "127.0.0.1"
-		As Integer Port = 80
 		As Integer Timeout = 3000
 		'Get response content and HTTP status code.
 		Declare Sub CallMethod(HTTPMethod As String, ByRef Request As HTTPRequest, ByRef Responce As HTTPResponce)

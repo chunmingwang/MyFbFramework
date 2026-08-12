@@ -8,9 +8,10 @@ Namespace My.Sys.Forms
 		Private Function HTTPConnection.ReadProperty(PropertyName As String) As Any Ptr
 			Select Case LCase(PropertyName)
 			Case "host": Return Cast(Any Ptr, StrPtr(This.Host))
-			Case "port": Return Cast(Any Ptr, @This.Port)
+			Case "port": Return Cast(Any Ptr, @This.FPort)
 			Case "timeout" : Return Cast(Any Ptr, @This.Timeout)
 			Case "abort" : Return @FAbort
+			Case "usessl" : Return @FUseSSL
 			Case Else: Return Base.ReadProperty(PropertyName)
 			End Select
 			Return 0
@@ -24,6 +25,7 @@ Namespace My.Sys.Forms
 			Case "port": This.Port = QInteger(Value)
 			Case "timeout" : This.Timeout = QInteger(Value)
 			Case "abort" : This.Abort = QBoolean(Value)
+			Case "usessl" : This.UseSSL = QBoolean(Value)
 			Case Else: Return Base.WriteProperty(PropertyName, Value)
 			End Select
 			Return True
@@ -36,11 +38,32 @@ Namespace My.Sys.Forms
 	Private Property HTTPConnection.Abort(Value As Boolean)
 		FAbort = Value
 	End Property
+
+	Private Property HTTPConnection.Port As Integer
+		Return FPort
+	End Property
+
+	Private Property HTTPConnection.Port(Value As Integer)
+		FPort = Value
+		If FUseSSLExplicitlySet = False Then FUseSSL = (FPort = 443)
+	End Property
+
+	Private Property HTTPConnection.UseSSL As Boolean
+		Return FUseSSL
+	End Property
+
+	Private Property HTTPConnection.UseSSL(Value As Boolean)
+		FUseSSL = Value
+		FUseSSLExplicitlySet = True
+	End Property
 	
 	Private Sub HTTPConnection.CallMethod(HTTPMethod As String, ByRef Request As HTTPRequest, ByRef Responce As HTTPResponce)
 		FAbort = False
 		#ifdef __USE_WASM__
-			Dim ptr_ As ZString Ptr = SendHTTPRequest("http" & IIf(Port = 80, "", "s") & "://" & Host & ":" & IIf(Port = 80 OrElse Port = 443, "", Trim(Str(Port))) & "/" & Request.ResourceAddress, HTTPMethod, Request.Body)
+			Dim As String URL = IIf(UseSSL, "https", "http") & "://" & Host
+			If (UseSSL AndAlso Port <> 443) OrElse (UseSSL = False AndAlso Port <> 80) Then URL &= ":" & Trim(Str(Port))
+			URL &= "/" & Request.ResourceAddress
+			Dim ptr_ As ZString Ptr = SendHTTPRequest(URL, HTTPMethod, Request.Body)
 			Var Pos1 = InStr(*ptr_, ":")
 			If Pos1 > 0 Then
 				Responce.StatusCode = Val(.Left(*ptr_, Pos1 - 1))
@@ -53,6 +76,7 @@ Namespace My.Sys.Forms
 			Dim As HINTERNET hSession, hConnect, hRequest
 			Dim As Boolean hSendRequest
 			Dim As String result
+			Dim As DWORD dwFlags
 			
 			hSession = InternetOpen("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36", INTERNET_OPEN_TYPE_DIRECT, "", "", 0)
 			If hSession = 0 Then
@@ -69,8 +93,8 @@ Namespace My.Sys.Forms
 			' SEND_TIMEOUT
 			InternetSetOption(hSession, INTERNET_OPTION_SEND_TIMEOUT, @Timeout, SizeOf(Timeout))
 			
-			'hConnect = InternetOpenUrl(hSession, "http" & IIf(Port = 80, "", "s") & "://" & Host & IIf(Port = 80 OrElse Port = 443, "", ":" & Trim(Str(Port))), "", 0, INTERNET_FLAG_RELOAD, 0)
-			hConnect = InternetConnect(hSession, Host, IIf(Port = 80, INTERNET_DEFAULT_HTTP_PORT, INTERNET_DEFAULT_HTTPS_PORT), NULL, NULL, INTERNET_SERVICE_HTTP, 0, 0)
+			'hConnect = InternetOpenUrl(hSession, IIf(UseSSL, "https", "http") & "://" & Host & IIf((UseSSL AndAlso Port = 443) OrElse (UseSSL = False AndAlso Port = 80), "", ":" & Trim(Str(Port))), "", 0, INTERNET_FLAG_RELOAD, 0)
+			hConnect = InternetConnect(hSession, Host, Port, NULL, NULL, INTERNET_SERVICE_HTTP, 0, 0)
 			If hConnect = 0 Then
 				Responce.StatusCode= 406
 				Responce.Body = "{""error"":{""message"":""Failed to open URL"",""code"":406}}"
@@ -80,7 +104,9 @@ Namespace My.Sys.Forms
 				Return
 			End If
 			
-			hRequest = HttpOpenRequest(hConnect, HTTPMethod, "/" & Request.ResourceAddress, NULL, NULL, NULL, IIf(Port = 80, INTERNET_FLAG_RELOAD Or INTERNET_FLAG_NO_CACHE_WRITE, INTERNET_FLAG_SECURE Or INTERNET_FLAG_RELOAD Or INTERNET_FLAG_NO_CACHE_WRITE), 0)
+			dwFlags = INTERNET_FLAG_RELOAD Or INTERNET_FLAG_NO_CACHE_WRITE
+			If UseSSL Then dwFlags Or= INTERNET_FLAG_SECURE
+			hRequest = HttpOpenRequest(hConnect, HTTPMethod, "/" & Request.ResourceAddress, NULL, NULL, NULL, dwFlags, 0)
 			If hRequest = 0 Then
 				Responce.StatusCode= 407
 				Responce.Body = "{""error"":{""message"":""Failed to open request"",""code"":407}}"
@@ -160,12 +186,14 @@ Namespace My.Sys.Forms
 				g_error_free(error_)
 				Return
 			End If
-			Dim tls_conn As GIOStream Ptr
-			If Port = 443 Then
+			Dim tls_conn As GIOStream Ptr = 0
+			If UseSSL Then
 				tls_conn = g_tls_client_connection_new(Cast(GIOStream Ptr, socket), 0, @error_)
 				If tls_conn = 0 Then
 					Print "Error: " & *error_->message
 					g_error_free(error_)
+					g_object_unref(socket)
+					g_object_unref(client)
 					Return
 				End If
 				g_tls_client_connection_set_server_identity(G_TLS_CLIENT_CONNECTION(tls_conn), G_SOCKET_CONNECTABLE(g_network_address_new(Host, Port)))
@@ -197,7 +225,7 @@ Namespace My.Sys.Forms
 				End If
 			Loop Until bytes_read <= 0
 			
-			g_object_unref(tls_conn)
+			If tls_conn <> 0 Then g_object_unref(tls_conn)
 			g_object_unref(socket)
 			g_object_unref(client)
 		#endif
@@ -205,6 +233,9 @@ Namespace My.Sys.Forms
 	
 	Constructor HTTPConnection
 		WLet(FClassName, "HTTPConnection")
+		FPort = 80
+		FUseSSL = False
+		FUseSSLExplicitlySet = False
 	End Constructor
 	
 	Destructor HTTPConnection
