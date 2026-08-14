@@ -20,6 +20,7 @@
 	Dim Shared As COLORREF darkBkColor = &H303030
 	Dim Shared As COLORREF darkBkColorDark = &H414141
 	Dim Shared As COLORREF darkHlBkColor = &h626262
+	Dim Shared As COLORREF darkDisabledTextColor = BGR(160, 160, 160)
 	Dim Shared As COLORREF darkTextColor = BGR(255, 255, 255) 
 	
 	' ugly colors for illustration purposes
@@ -28,6 +29,10 @@
 	Dim Shared As HBRUSH g_brItemBackgroundSelected
 	Dim Shared As HBRUSH hbrBkgnd, hbrHlBkgnd, hbrBkgndMenu
 	Dim Shared As HTHEME g_menuTheme = 0
+	#define DarkModeIsWindowDisabled(_Handle_) ((GetWindowLongPtr((_Handle_), GWL_STYLE) And WS_DISABLED) <> 0)
+	#define DarkModeTextColor(_Disabled_) IIf((_Disabled_), darkDisabledTextColor, darkTextColor)
+	#define DarkModeBackColor(_Disabled_) IIf((_Disabled_), darkHlBkColor, darkBkColor)
+	#define DarkModeBackBrush(_Disabled_) IIf((_Disabled_), hbrHlBkgnd, hbrBkgnd)
 #else
 	Dim Shared As Integer darkBkColorTitle = BGR(10, 10, 10) 
 	Dim Shared As Integer darkBkColorMenu = BGR(41, 41, 41)
@@ -36,6 +41,7 @@
 	Dim Shared As Integer darkBkColor = &H303030
 	Dim Shared As Integer darkBkColorDark =&H414141
 	Dim Shared As Integer darkHlBkColor = &H626262
+	Dim Shared As Integer darkDisabledTextColor = BGR(160, 160, 160)
 	Dim Shared As Integer darkTextColor = BGR(255, 255, 255) 
 #endif
 
