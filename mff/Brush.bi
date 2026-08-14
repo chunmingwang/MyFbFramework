@@ -31,8 +31,7 @@
 	Dim Shared As HBRUSH hbrBkgnd, hbrHlBkgnd, hbrBkgndMenu
 	Dim Shared As HTHEME g_menuTheme = 0
 	#define DarkModeIsWindowDisabled(_Handle_) ((GetWindowLongPtr((_Handle_), GWL_STYLE) And WS_DISABLED) <> 0)
-	#define DarkModeTextColor(_Disabled_) IIf((_Disabled_), darkDisabledTextColor, darkTextColor)
-	#define DarkModeBackColor(_Disabled_) IIf((_Disabled_), darkDisabledBkColor, darkBkColor)
+	' Pass a pre-evaluated Boolean; FreeBASIC IIf evaluates both branches.
 	#define DarkModeBackBrush(_Disabled_) IIf((_Disabled_), hbrHlBkgnd, hbrBkgnd)
 #else
 	Dim Shared As Integer darkBkColorTitle = BGR(10, 10, 10) 
@@ -46,6 +45,10 @@
 	Dim Shared As Integer darkDisabledTextColor = BGR(160, 160, 160)
 	Dim Shared As Integer darkTextColor = BGR(255, 255, 255) 
 #endif
+
+' Pass a pre-evaluated Boolean; FreeBASIC IIf evaluates both branches.
+#define DarkModeTextColor(_Disabled_) IIf((_Disabled_), darkDisabledTextColor, darkTextColor)
+#define DarkModeBackColor(_Disabled_) IIf((_Disabled_), darkDisabledBkColor, darkBkColor)
 
 Namespace My.Sys.Drawing
 	#ifdef __USE_WINAPI__
