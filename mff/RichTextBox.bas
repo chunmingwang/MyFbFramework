@@ -1591,11 +1591,16 @@ Namespace My.Sys.Forms
 		
 		Private Sub RichTextBox.SetDark(Value As Boolean)
 			Base.SetDark Value
-			Dim As Boolean bDisabled = DarkModeIsWindowDisabled(FHandle)
+			Dim As Boolean bDisabled = (GetWindowLongPtr(FHandle, GWL_STYLE) And WS_DISABLED) <> 0
 			Dim As Integer clrText, clrBack
 			If Value Then
-				clrText = DarkModeTextColor(bDisabled)
-				clrBack = DarkModeBackColor(bDisabled)
+				If bDisabled Then
+					clrText = darkTextColor
+					clrBack = darkHlBkColor
+				Else
+					clrText = darkTextColor
+					clrBack = darkBkColor
+				End If
 			Else
 				clrText = FForeColor
 				clrBack = FBackColor

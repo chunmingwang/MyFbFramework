@@ -1719,14 +1719,12 @@ Namespace My.Sys.Forms
 							If (g_darkModeSupported AndAlso g_darkModeEnabled AndAlso .FDefaultBackColor = .FBackColor) Then
 								If .ClassAncestor <> "ScrollBar" Then
 									Dim As HDC hd = Cast(HDC, Message.wParam)
-									Dim As Boolean bDisabled = DarkModeIsWindowDisabled(.FHandle)
-									Dim As HBRUSH hDarkBrush = DarkModeBackBrush(bDisabled)
 									'SetBkMode hd, TRANSPARENT
-									SetTextColor(hd, DarkModeTextColor(bDisabled))
-									SetBkColor(hd, DarkModeBackColor(bDisabled))
+									SetTextColor(hd, darkTextColor)
+									SetBkColor(hd, darkBkColor)
 									'SetBkMode hd, OPAQUE
-									If .Brush.Handle <> hDarkBrush Then
-										.Brush.Handle = hDarkBrush
+									If .Brush.Handle <> hbrBkgnd Then
+										.Brush.Handle = hbrBkgnd
 									End If
 									Message.Result = Cast(LRESULT, .Brush.Handle)
 								End If
@@ -1751,12 +1749,10 @@ Namespace My.Sys.Forms
 						'If Child Then
 						If (g_darkModeSupported AndAlso g_darkModeEnabled AndAlso FDefaultBackColor = FBackColor) Then
 							Dim As HDC hd = Cast(HDC, Message.wParam)
-							Dim As Boolean bDisabled = DarkModeIsWindowDisabled(FHandle)
-							Dim As HBRUSH hDarkBrush = DarkModeBackBrush(bDisabled)
-							SetTextColor(hd, DarkModeTextColor(bDisabled))
-							SetBkColor(hd, DarkModeBackColor(bDisabled))
-							If Brush.Handle <> hDarkBrush Then
-								Brush.Handle = hDarkBrush
+							SetTextColor(hd, darkTextColor)
+							SetBkColor(hd, darkBkColor)
+							If Brush.Handle <> hbrBkgnd Then
+								Brush.Handle = hbrBkgnd
 							End If
 						Else
 							SetBkMode(DC, TRANSPARENT)
