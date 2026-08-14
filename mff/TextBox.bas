@@ -1317,6 +1317,18 @@ Namespace My.Sys.Forms
 		
 		Private Sub TextBox.SetDark(Value As Boolean)
 			Base.SetDark Value
+			If Value Then
+				Brush.Handle = DarkModeBackBrush(DarkModeIsWindowDisabled(FHandle))
+				SetWindowTheme(FHandle, "DarkMode_Explorer", nullptr)
+			Else
+				If FBackColor = -1 Then
+					Brush.Handle = 0
+				Else
+					Brush.Color = FBackColor
+				End If
+				SetWindowTheme(FHandle, NULL, NULL)
+			End If
+			SendMessageW(FHandle, WM_THEMECHANGED, 0, 0)
 		End Sub
 	#endif
 	
@@ -1364,10 +1376,7 @@ Namespace My.Sys.Forms
 			Case WM_PAINT, WM_MOUSELEAVE, WM_MOUSEMOVE
 				If g_darkModeSupported AndAlso g_darkModeEnabled AndAlso (CBool(message.Msg <> WM_MOUSEMOVE) OrElse (CBool(message.Msg = WM_MOUSEMOVE) AndAlso FMouseInClient)) Then
 					If Not FDarkMode Then
-						FDarkMode = True
-						Brush.Handle = hbrBkgnd
-						SetWindowTheme(FHandle, "DarkMode_Explorer", nullptr)
-						SendMessageW(FHandle, WM_THEMECHANGED, 0, 0)
+						SetDark True
 						Repaint
 					End If
 					Dim As Any Ptr cp = GetClassProc(message.hWnd)
@@ -1402,12 +1411,23 @@ Namespace My.Sys.Forms
 					SendMessage(FHandle, EM_SETMARGINS, EC_RIGHTMARGIN, MAKELPARAM(ScaleX(FLeftMargin), ScaleX(FRightMargin)))
 				End If
 				Return
+			Case WM_ENABLE
+				If FDarkMode Then
+					SetDark True
+				End If
 			Case CM_CTLCOLOR
 				Static As HDC Dc
+				Dim As Boolean bDisabled = DarkModeIsWindowDisabled(FHandle)
+				Dim As Boolean bDarkDefault = g_darkModeSupported AndAlso g_darkModeEnabled AndAlso FDefaultBackColor = FBackColor
 				Dc = Cast(HDC, message.wParam)
 				SetBkMode Dc, TRANSPARENT
-				SetTextColor Dc, Font.Color
-				SetBkColor Dc, This.BackColor
+				If bDarkDefault Then
+					SetTextColor Dc, DarkModeTextColor(bDisabled)
+					SetBkColor Dc, DarkModeBackColor(bDisabled)
+				Else
+					SetTextColor Dc, Font.Color
+					SetBkColor Dc, This.BackColor
+				End If
 				SetBkMode Dc, OPAQUE
 			Case CM_COMMAND
 				Select Case message.wParamHi

@@ -575,7 +575,7 @@ Namespace My.Sys.Forms
 				SetWindowTheme(cmbHandle, "DarkMode_CFD", nullptr)
 				SetWindowTheme(lstHandle, "DarkMode_Explorer", nullptr)
 				If txtHandle Then SetWindowTheme(txtHandle, "DarkMode_Explorer", nullptr)
-				Brush.Handle = hbrBkgnd
+				Brush.Handle = DarkModeBackBrush(DarkModeIsWindowDisabled(FHandle))
 				SendMessageW(cmbHandle, WM_PRINTCLIENT, 0, 0)
 			Else
 				Dim As HWND cmbHandle = Cast(HWND, SendMessageW(FHandle, CBEM_GETCOMBOCONTROL, 0, 0))
@@ -644,6 +644,8 @@ Namespace My.Sys.Forms
 '						SendMessageW(cmbHandle, WM_THEMECHANGED, 0, 0)
 					End If
 				End If
+			Case WM_ENABLE
+				If FComboBoxDarkMode Then SetDark True
 			Case WM_DESTROY
 				If ImagesList Then Perform CBEM_SETIMAGELIST, 0, 0
 			Case WM_DRAWITEM
@@ -656,17 +658,26 @@ Namespace My.Sys.Forms
 					If lpdis->itemID = &HFFFFFFFF& Then
 						Exit Sub
 					EndIf
+					Dim As Boolean bDisabled = DarkModeIsWindowDisabled(FHandle) OrElse ((lpdis->itemState And (ODS_DISABLED Or ODS_GRAYED)) <> 0)
+					Dim As Boolean bDarkDefault = g_darkModeSupported AndAlso g_darkModeEnabled AndAlso FDefaultBackColor = FBackColor
 					Select Case lpdis->itemAction
 					Case ODA_DRAWENTIRE, ODA_SELECT
 						'DRAW BACKGROUND
 						If (lpdis->itemState And ODS_COMBOBOXEDIT) Then
 						Else
-							FillRect lpdis->hDC, @lpdis->rcItem, Brush.Handle 'GetSysColorBrush(COLOR_WINDOW)
+							FillRect lpdis->hDC, @lpdis->rcItem, IIf(bDarkDefault AndAlso bDisabled, DarkModeBackBrush(True), Brush.Handle) 'GetSysColorBrush(COLOR_WINDOW)
 						End If
-						If (lpdis->itemState And ODS_SELECTED)   Then                       'if selected Then
+						If bDarkDefault AndAlso bDisabled Then
 							If (lpdis->itemState And ODS_COMBOBOXEDIT) Then
 								SetBkMode lpdis->hDC, TRANSPARENT
-								If g_darkModeSupported AndAlso g_darkModeEnabled AndAlso FDefaultBackColor = FBackColor Then
+							Else
+								SetBkColor lpdis->hDC, DarkModeBackColor(True)
+							End If
+							SetTextColor lpdis->hDC, DarkModeTextColor(True)
+						ElseIf (lpdis->itemState And ODS_SELECTED)   Then                       'if selected Then
+							If (lpdis->itemState And ODS_COMBOBOXEDIT) Then
+								SetBkMode lpdis->hDC, TRANSPARENT
+								If bDarkDefault Then
 									SetTextColor lpdis->hDC, darkTextColor                'Set text color
 								Else
 									SetTextColor lpdis->hDC, GetSysColor(COLOR_WINDOWTEXT)                'Set text color
@@ -687,7 +698,7 @@ Namespace My.Sys.Forms
 								FillRect lpdis->hDC, @lpdis->rcItem, Brush.Handle 'GetSysColorBrush(COLOR_WINDOW)
 								SetBkColor lpdis->hDC, Brush.Color 'GetSysColor(COLOR_WINDOW)                    'Set text Background
 							End If
-							If g_darkModeSupported AndAlso g_darkModeEnabled AndAlso FDefaultBackColor = FBackColor Then
+							If bDarkDefault Then
 								SetTextColor lpdis->hDC, darkTextColor                'Set text color
 							Else
 								SetTextColor lpdis->hDC, GetSysColor(COLOR_WINDOWTEXT)                'Set text color
