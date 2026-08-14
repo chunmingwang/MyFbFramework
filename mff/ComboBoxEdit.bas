@@ -557,7 +557,7 @@ Namespace My.Sys.Forms
 			Base.SetDark Value
 			If Value Then
 				SetWindowTheme(FHandle, "DarkMode_CFD", nullptr)
-				Brush.Handle = DarkModeBackBrush(DarkModeIsWindowDisabled(FHandle))
+				Brush.Handle = hbrBkgnd
 				SendMessageW(FHandle, WM_THEMECHANGED, 0, 0)
 				Dim As COMBOBOXINFO cbi
 				cbi.cbSize = SizeOf(COMBOBOXINFO)
@@ -648,21 +648,12 @@ Namespace My.Sys.Forms
 					End If
 				End If
 				Message.Result = 0
-			Case WM_ENABLE
-				If FDarkMode Then SetDark True
 			Case CM_CTLCOLOR
 				Dim As HDC Dc
-				Dim As Boolean bDisabled = DarkModeIsWindowDisabled(FHandle)
-				Dim As Boolean bDarkDefault = g_darkModeSupported AndAlso g_darkModeEnabled AndAlso FDefaultBackColor = FBackColor
 				Dc = Cast(HDC, Message.wParam)
 				SetBkMode Dc, TRANSPARENT
-				If bDarkDefault Then
-					SetTextColor Dc, DarkModeTextColor(bDisabled)
-					SetBkColor Dc, DarkModeBackColor(bDisabled)
-				Else
-					SetTextColor Dc, Font.Color
-					SetBkColor Dc, This.BackColor
-				End If
+				SetTextColor Dc, Font.Color
+				SetBkColor Dc, This.BackColor
 				SetBkMode Dc, OPAQUE
 			Case CM_CANCELMODE
 				If Message.Sender <> This Then Perform(CB_SHOWDROPDOWN, 0, 0)
@@ -717,14 +708,7 @@ Namespace My.Sys.Forms
 				If OnDrawItem Then
 					OnDrawItem(*Designer, This, ItemID, State, *Cast(Rect Ptr, @R), Dc)
 				Else
-					Dim As Boolean bDisabled = DarkModeIsWindowDisabled(FHandle) OrElse ((State And (ODS_DISABLED Or ODS_GRAYED)) <> 0)
-					Dim As Boolean bDarkDefault = g_darkModeSupported AndAlso g_darkModeEnabled AndAlso FDefaultBackColor = FBackColor
-					If bDarkDefault AndAlso bDisabled Then
-						FillRect Dc, @R, DarkModeBackBrush(True)
-						SetTextColor Dc, DarkModeTextColor(True)
-						SetBkColor Dc, DarkModeBackColor(True)
-						TextOut(Dc, R.Left + 2, R.Top, Item(ItemID), Len(Item(ItemID)))
-					ElseIf (State And ODS_SELECTED) = ODS_SELECTED Then
+					If (State And ODS_SELECTED) = ODS_SELECTED Then
 						Static As HBRUSH B
 						If B Then DeleteObject B
 						B = CreateSolidBrush(FSelColor)
