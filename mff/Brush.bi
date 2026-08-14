@@ -20,7 +20,7 @@
 	Dim Shared As COLORREF darkBkColor = &H303030
 	Dim Shared As COLORREF darkBkColorDark = &H414141
 	Dim Shared As COLORREF darkHlBkColor = &h626262
-	Dim Shared As COLORREF darkDisabledBkColor = darkHlBkColor
+	#define darkDisabledBkColor darkHlBkColor
 	Dim Shared As COLORREF darkDisabledTextColor = BGR(160, 160, 160)
 	Dim Shared As COLORREF darkTextColor = BGR(255, 255, 255) 
 	
@@ -42,7 +42,7 @@
 	Dim Shared As Integer darkBkColor = &H303030
 	Dim Shared As Integer darkBkColorDark =&H414141
 	Dim Shared As Integer darkHlBkColor = &H626262
-	Dim Shared As Integer darkDisabledBkColor = darkHlBkColor
+	#define darkDisabledBkColor darkHlBkColor
 	Dim Shared As Integer darkDisabledTextColor = BGR(160, 160, 160)
 	Dim Shared As Integer darkTextColor = BGR(255, 255, 255) 
 #endif
