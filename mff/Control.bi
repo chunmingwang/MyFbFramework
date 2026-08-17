@@ -476,10 +476,10 @@ Namespace My.Sys.Forms
 				FClient As HWND
 				As Integer FClientX, FClientY, FClientW, FClientH
 				FToolInfo          As TOOLINFO
-				FDarkMode          As Boolean
 				FDropTarget        As CDropTarget
 				FDropSource        As CDropSource
 			#endif
+			FDarkMode          As Boolean
 			FBorderStyle       As Integer
 			FExStyle           As Integer
 			FAllowDrop         As Boolean
