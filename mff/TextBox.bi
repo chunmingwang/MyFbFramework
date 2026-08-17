@@ -122,6 +122,9 @@ Namespace My.Sys.Forms
 		Declare Property Alignment As AlignmentConstants
 		'Gets or sets the horizontal alignment of text in the TextBox.
 		Declare Property Alignment(Value As AlignmentConstants)
+		'Returns/sets a value that determines whether an object can respond to user-generated events (Windows, Linux).
+		Declare Virtual Property Enabled As Boolean
+		Declare Virtual Property Enabled(Value As Boolean)
 		Declare Property BorderStyle As BorderStyles
 		'Specifies the border style of the TextBox (None, FixedSingle, etc).
 		Declare Property BorderStyle(Value As BorderStyles)

@@ -2460,6 +2460,10 @@ Namespace My.Sys.Forms
 		Private Sub Control.Move(cLeft As Integer, cTop As Integer, cWidth As Integer, cHeight As Integer)
 			Base.Move IIf(FDesignMode AndAlso (Designer = @This), 0, IIf(Constraints.Left, Constraints.Left, cLeft)), IIf(FDesignMode AndAlso (Designer = @This), 0, IIf(Constraints.Top, Constraints.Top, cTop)), IIf(Constraints.Width, Constraints.Width, cWidth), IIf(Constraints.Height, Constraints.Height, cHeight)
 		End Sub
+
+		Private Function Control.IsReportBand() As Boolean
+			Return False
+		End Function
 		
 		#ifdef __USE_GTK__
 			Private Sub Control.Control_SizeAllocate(widget As GtkWidget Ptr, allocation As GdkRectangle Ptr, user_data As Any Ptr)

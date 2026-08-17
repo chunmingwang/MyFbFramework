@@ -547,6 +547,7 @@ Namespace My.Sys.Forms
 			Declare Property ExStyle As Integer
 			Declare Property ExStyle(Value As Integer)
 			Declare Virtual Sub Move(cLeft As Integer, cTop As Integer, cWidth As Integer, cHeight As Integer)
+			Declare Virtual Function IsReportBand() As Boolean
 			OnActiveControlChanged As Sub(ByRef Sender As Control)
 			OnHandleIsAllocated As Sub(ByRef Sender As Control)
 			OnHandleIsDestroyed As Sub(ByRef Sender As Control)
@@ -671,8 +672,8 @@ Namespace My.Sys.Forms
 			Declare Property IsChild As Boolean
 			Declare Property IsChild(Value As Boolean)
 			'Returns/sets a value that determines whether an object can respond to user-generated events (Windows, Linux).
-			Declare Property Enabled As Boolean
-			Declare Property Enabled(Value As Boolean)
+			Declare Virtual Property Enabled As Boolean
+			Declare Virtual Property Enabled(Value As Boolean)
 			'Returns/sets a value that determines whether an object is visible or hidden (Windows, Linux, Web).
 			Declare Virtual Property Visible As Boolean
 			Declare Virtual Property Visible(Value As Boolean)

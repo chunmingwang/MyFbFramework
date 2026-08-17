@@ -438,17 +438,25 @@ Namespace My.Sys.Forms
 					OldFontHandle = SelectObject(Dc, Font.Handle)
 					SetTextColor(Dc, darkTextColor)
 					SetBkMode(Dc, TRANSPARENT)
-					For i As Integer = 0 To Count - 1
-						SendMessage FHandle, SB_GETRECT, i, Cast(LPARAM, @R)
-						'Canvas.Pen.Color = clWhite
-						'SelectObject(Dc, Canvas.Pen.Handle)
-						'MoveToEx Dc, R.Left - 1, 3, 0
-						'LineTo Dc, R.Left - 1, R.Bottom - 3
-						R.Left += 3
-						R.Top += 3
-						DrawText Dc, Panels[i]->Caption, Len(Panels[i]->Caption), @R, DT_END_ELLIPSIS
-						'.TextOut(Dc, R.Left + 3, R.Top + 3, Panels[i]->Caption, Len(Panels[i]->Caption))
-					Next i
+					If Count = 0 Then
+						If FSimplePanel Then
+							TextOut Dc, 2, 6, FSimpleText, Len(*FSimpleText)
+						Else
+							TextOut Dc, 2, 6, FText, Len(*FText)
+						End If
+					Else
+						For i As Integer = 0 To Count - 1
+							SendMessage FHandle, SB_GETRECT, i, Cast(LPARAM, @R)
+							'Canvas.Pen.Color = clWhite
+							'SelectObject(Dc, Canvas.Pen.Handle)
+							'MoveToEx Dc, R.Left - 1, 3, 0
+							'LineTo Dc, R.Left - 1, R.Bottom - 3
+							R.Left += 3
+							R.Top += 3
+							DrawText Dc, Panels[i]->Caption, Len(Panels[i]->Caption), @R, DT_END_ELLIPSIS
+							'.TextOut(Dc, R.Left + 3, R.Top + 3, Panels[i]->Caption, Len(Panels[i]->Caption))
+						Next i
+					End If
 					SetBkMode(Dc, OPAQUE)
 					NewFontHandle = SelectObject(Dc, OldFontHandle)
 					If OnPaint Then OnPaint(*Designer, This, Canvas)

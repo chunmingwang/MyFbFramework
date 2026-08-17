@@ -139,6 +139,14 @@ Namespace My.Sys.Forms
 		ChangeTabStop Value
 	End Property
 	
+	Private Property TextBox.Enabled As Boolean
+		Return Base.Enabled
+	End Property
+	
+	Private Property TextBox.Enabled(Value As Boolean)
+		Base.Enabled = Value
+	End Property
+	
 	Private Sub TextBox.ScrollToCaret()
 		#ifdef __USE_GTK__
 			If GTK_IS_TEXT_VIEW(widget) Then

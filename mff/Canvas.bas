@@ -2589,10 +2589,19 @@ Namespace My.Sys.Drawing
 				'.dwCharX = .UnScaleX(extend.width)
 				'.dwCharY = .UnScaleY(extend.height)
 			#else
-				Dim As HDC hd = GetDC(.ParentControl->Handle)
+				Dim As HDC hd
+				If .ParentControl <> 0 Then
+					hd = GetDC(.ParentControl->Handle)
+				Else
+					hd = GetDC(NULL)
+				End If
 				SelectObject(hd, .Font.Handle)
 				GetTextMetrics(hd, @.tm)
-				ReleaseDC(.ParentControl->Handle, hd)
+				If .ParentControl <> 0 Then
+					ReleaseDC(.ParentControl->Handle, hd)
+				Else
+					ReleaseDC(NULL, hd)
+				End If
 				.dwCharX = .UnScaleX(.tm.tmAveCharWidth)
 				.dwCharY = .UnScaleY(.tm.tmHeight)
 				If .FUseDirect2D AndAlso .pRenderTarget <> 0 Then

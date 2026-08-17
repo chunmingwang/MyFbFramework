@@ -567,6 +567,8 @@ Namespace My.Sys.Forms
 						'dark scrollbar for listbox of combobox
 						SetWindowTheme(cbi.hwndList, "DarkMode_Explorer", nullptr)
 					End If
+					Dim As HWND txtHandle = FindWindowEx(FHandle, 0, "Edit", 0)
+					If txtHandle Then SetWindowTheme(txtHandle, "DarkMode_Explorer", nullptr)
 				End If
 			Else
 				SetWindowTheme(FHandle, NULL, NULL)
@@ -584,6 +586,8 @@ Namespace My.Sys.Forms
 						'dark scrollbar for listbox of combobox
 						SetWindowTheme(cbi.hwndList, NULL, NULL)
 					End If
+					Dim As HWND txtHandle = FindWindowEx(FHandle, 0, "Edit", 0)
+					If txtHandle Then SetWindowTheme(txtHandle, NULL, NULL)
 				End If
 			End If
 			'SendMessage FHandle, WM_THEMECHANGED, 0, 0

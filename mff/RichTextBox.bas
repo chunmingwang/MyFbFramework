@@ -1006,6 +1006,30 @@ Namespace My.Sys.Forms
 		End Sub
 	#endif
 	
+	Private Property RichTextBox.Enabled As Boolean
+		If FDarkMode Then
+			Return FEnabled
+		Else
+			Return Base.Enabled
+		End If
+	End Property
+	
+	Private Property RichTextBox.Enabled(Value As Boolean)
+		If FDarkMode Then
+			FEnabled = Value
+			#ifdef __USE_WINAPI__
+				If Value Then
+					ChangeStyle WS_TABSTOP, FTabStop
+				Else
+					ChangeStyle WS_TABSTOP, False
+					If Not IsWindowEnabled(FHandle) Then EnableWindow FHandle, True
+				End If
+			#endif
+		Else
+			Base.Enabled = Value
+		End If
+	End Property
+	
 	Private Sub RichTextBox.ProcessMessage(ByRef message As Message)
 		#ifndef __USE_GTK__
 			Select Case message.Msg
@@ -1052,11 +1076,26 @@ Namespace My.Sys.Forms
 						SetDark False
 					End If
 				End If
-				If ReadOnly Andalso FTextRTF <> 0 Then TextRTF = *FTextRTF
+				If ReadOnly AndAlso FTextRTF <> 0 Then TextRTF = *FTextRTF
 				Return
 			Case WM_SETCURSOR
-				If m_bMenuOpen Then
+				If m_bMenuOpen OrElse FDarkMode AndAlso Not FEnabled Then
 					message.Result = Cast(LRESULT, SetCursor(LoadCursor(NULL, IDC_ARROW)))
+				End If
+			Case WM_MOUSEACTIVATE
+				If FDarkMode AndAlso Not FEnabled Then
+					message.Result = MA_NOACTIVATEANDEAT
+					Return
+				End If
+			Case WM_KEYDOWN
+				If FDarkMode AndAlso Not FEnabled Then
+					message.Result = -1
+					Return
+				End If
+			Case WM_SETFOCUS
+				If FDarkMode AndAlso Not FEnabled Then
+					message.Result = -1
+					Return
 				End If
 			Case WM_RBUTTONUP
 				If ContextMenu Then
@@ -1608,6 +1647,7 @@ Namespace My.Sys.Forms
 				Cf.crBackColor = FBackColor
 				SendMessage(FHandle, EM_SETCHARFORMAT, SCF_ALL, Cast(LPARAM, @Cf))
 			End If
+			Enabled = FEnabled
 		End Sub
 	#endif
 	

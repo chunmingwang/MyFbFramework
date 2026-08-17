@@ -73,6 +73,9 @@ Namespace My.Sys.Forms
 		Declare Function FindPrev(ByRef Value As WString = "") As Boolean
 		'Scrolls to last visible line.
 		Declare Function BottomLine As Integer
+		'Returns/sets a value that determines whether an object can respond to user-generated events (Windows, Linux).
+		Declare Virtual Property Enabled As Boolean
+		Declare Virtual Property Enabled(Value As Boolean)
 		Declare Property SelAlignment As AlignmentConstants
 		'Alignment of selected paragraphs.
 		Declare Property SelAlignment(Value As AlignmentConstants)
