@@ -451,5 +451,5 @@ End Constructor
 
 Private Destructor WStringList
 	This.Clear
-	If FText Then Deallocate((FText))
+	If FText Then _Deallocate(((FText)))
 End Destructor

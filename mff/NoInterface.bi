@@ -86,7 +86,7 @@ Namespace Debug
 		If Msg3 <> -1 Then WAdd(tMsgPtr, Chr(9) & Msg3)
 		If Msg4 <> -1 Then WAdd(tMsgPtr, Chr(9) & Msg4)
 		Print(*tMsgPtr, bWriteLog, bPrintMsg, bShowMsg, bPrintToDebugWindow)
-		Deallocate(tMsgPtr)
+		_Deallocate((tMsgPtr))
 	End Sub
 	
 	Private Sub Print(ByRef MSG As WString, ByRef Msg1 As Const WString = "", ByRef Msg2 As Const WString = "", ByRef Msg3 As Const WString = "", ByRef Msg4 As Const WString = "", bWriteLog As Boolean = False, bPrintMsg As Boolean = True, bShowMsg As Boolean = False, bPrintToDebugWindow As Boolean = True)
@@ -97,7 +97,7 @@ Namespace Debug
 		If Msg3 <> "" Then WAdd(tMsgPtr, Chr(9) & Msg3)
 		If Msg4 <> "" Then WAdd(tMsgPtr, Chr(9) & Msg4)
 		Print(*tMsgPtr, bWriteLog, bPrintMsg, bShowMsg, bPrintToDebugWindow)
-		Deallocate(tMsgPtr)
+		_Deallocate((tMsgPtr))
 	End Sub
 	
 	Private Sub Print(ByRef MSG As String, ByRef Msg1 As Const String = "", ByRef Msg2 As Const String = "", ByRef Msg3 As Const String = "", ByRef Msg4 As Const String = "", bWriteLog As Boolean = False, bPrintMsg As Boolean = True, bShowMsg As Boolean = False, bPrintToDebugWindow As Boolean = True)
@@ -108,7 +108,7 @@ Namespace Debug
 		If Msg3 <> "" Then WAdd(tMsgPtr, Chr(9) & Msg3)
 		If Msg4 <> "" Then WAdd(tMsgPtr, Chr(9) & Msg4)
 		Print(*tMsgPtr, bWriteLog, bPrintMsg, bShowMsg, bPrintToDebugWindow)
-		Deallocate(tMsgPtr)
+		_Deallocate((tMsgPtr))
 	End Sub
 	
 	Private Sub Print(ByRef MSG As ZString, ByRef Msg1 As Const ZString = "", ByRef Msg2 As Const ZString = "", ByRef Msg3 As Const ZString = "", ByRef Msg4 As Const ZString = "", bWriteLog As Boolean = False, bPrintMsg As Boolean = True, bShowMsg As Boolean = False, bPrintToDebugWindow As Boolean = True)
@@ -119,7 +119,7 @@ Namespace Debug
 		If Msg3 <> "" Then WAdd(tMsgPtr, Chr(9) & Msg3)
 		If Msg4 <> "" Then WAdd(tMsgPtr, Chr(9) & Msg4)
 		Print(*tMsgPtr, bWriteLog, bPrintMsg, bShowMsg, bPrintToDebugWindow)
-		Deallocate(tMsgPtr)
+		_Deallocate((tMsgPtr))
 	End Sub
 	
 	Private Sub Print Overload(ByRef Msg As String, bWriteLog As Boolean = False, bPrintMsg As Boolean = True, bShowMsg As Boolean = False, bPrintToDebugWindow As Boolean = True)
@@ -173,8 +173,8 @@ End Namespace
 
 Public Function MsgBox Alias "MsgBox" (ByRef MsgStr As WString, ByRef Caption As WString = "", MsgType As MessageType = MessageType.mtInfo, ButtonsType As ButtonsTypes = ButtonsTypes.btOK) As MessageResult
 	Dim As Integer Result = -1
-	Dim As WString Ptr FCaption = CAllocate((Len(Caption) + 1) * SizeOf(WString))
-	Dim As WString Ptr FMsgStr = CAllocate((Len(MsgStr) + 1) * SizeOf(WString))
+	Dim As WString Ptr FCaption = _CAllocate((Len(Caption) + 1) * SizeOf(WString))
+	Dim As WString Ptr FMsgStr = _CAllocate((Len(MsgStr) + 1) * SizeOf(WString))
 	*FCaption = Caption
 	*FMsgStr = MsgStr
 	Dim As Integer MsgTypeIn, ButtonsTypeIn
@@ -334,7 +334,7 @@ End Function
 					#else
 						Dim CodePage As Integer = IIf(nCodePage= -1, GetACP(), nCodePage)
 						Dim As Integer m_BufferLen = MultiByteToWideChar(CodePage, 0, StrPtr(Buff), -1, NULL, 0) - 1
-						Dim As WString Ptr pBuff = CAllocate(m_BufferLen * 2 + 2)
+						Dim As WString Ptr pBuff = _CAllocate(m_BufferLen * 2 + 2)
 						MultiByteToWideChar(CodePage, 0, StrPtr(Buff), -1, pBuff, m_BufferLen)
 						Return pBuff
 					#endif
@@ -347,7 +347,7 @@ End Function
 					#else
 						Dim CodePage As Integer = IIf(nCodePage= -1, GetACP(), nCodePage)
 						Dim As Integer m_BufferLen = MultiByteToWideChar(CodePage, 0, StrPtr(Buff), -1, NULL, 0) - 1
-						Dim As WString Ptr pBuff = CAllocate(m_BufferLen * 2 + 2)
+						Dim As WString Ptr pBuff = _CAllocate(m_BufferLen * 2 + 2)
 						MultiByteToWideChar(CodePage, 0, StrPtr(Buff), -1, pBuff, m_BufferLen)
 						Return pBuff
 					#endif
@@ -425,10 +425,10 @@ End Function
 						wData = Replace(wData, OldLineStr, NewLineStr)
 					End If
 					Dim As Integer m_BufferLen = WideCharToMultiByte(CodePage, 0, StrPtr(wData), -1, NULL, 0, NULL, NULL) - 1
-					Dim As ZString Ptr pBuff = CAllocate(m_BufferLen * 2 + 2)
+					Dim As ZString Ptr pBuff = _CAllocate(m_BufferLen * 2 + 2)
 					WideCharToMultiByte(CodePage, 0, StrPtr(wData), m_BufferLen, pBuff, m_BufferLen, NULL, NULL)
 					Put #Fn, , *pBuff
-					Deallocate(pBuff)
+					_Deallocate((pBuff))
 				#endif
 			'ElseIf FileEncoding = FileEncodings.PlainText Then
 			'	'To prevent right truncation due to the differing lengths of String and WString. THis is ANSI only

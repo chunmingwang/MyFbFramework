@@ -1176,7 +1176,7 @@ Namespace My.Sys.Forms
 			Dim As Integer UboundData = UBound(DataArrayPtr, 2)
 			For i As Integer = LBound(DataArrayPtr, 1) To UBound(DataArrayPtr, 1)
 				For j As Integer = LboundData To UboundData
-					Deallocate DataArrayPtr(i, j)
+					_Deallocate(DataArrayPtr(i, j))
 				Next
 			Next
 		End If
@@ -2309,7 +2309,7 @@ Namespace My.Sys.Forms
 				Dim As Integer UboundData = UBound(DataArrayPtr, 2)
 				For i As Integer = LBound(DataArrayPtr, 1) To UBound(DataArrayPtr, 1)
 					For j As Integer = LboundData To UboundData
-						Deallocate DataArrayPtr(i, j)
+						_Deallocate(DataArrayPtr(i, j))
 					Next
 				Next
 				ReDim DataArrayPtr(0, 0)
@@ -2330,7 +2330,7 @@ Namespace My.Sys.Forms
 				If FFixCols > 0 Then Columns.Add "NO.", , 30 , cfRight
 				For i As Integer = 0 To UBound(ColTitle)
 					Columns.Add *ColTitle(i)
-					Deallocate ColTitle(i) : ColTitle(i) = 0
+					_Deallocate(ColTitle(i)) : ColTitle(i) = 0
 				Next
 				Erase ColTitle
 				If ReadToArrary Then ReDim DataArrayPtr(0 To items, 0 To ArrayUbound)

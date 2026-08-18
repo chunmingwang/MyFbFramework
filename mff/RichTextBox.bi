@@ -31,6 +31,7 @@ Namespace My.Sys.Forms
 		FFindText           As WString Ptr
 		FTextRange          As WString Ptr
 		FTextRTF            As WString Ptr
+		FSelFontName        As WString Ptr
 		FSelWStrVal         As WString Ptr
 		FSelIntVal          As Integer
 		FSelBoolVal         As Integer

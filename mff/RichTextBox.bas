@@ -21,7 +21,7 @@ Namespace My.Sys.Forms
 			Case "selcharoffset": FSelIntVal = SelCharOffset: Return @FSelIntVal
 			Case "selcharset": FSelIntVal = SelCharSet: Return @FSelIntVal
 			Case "selcolor": FSelIntVal = SelColor: Return @FSelIntVal
-			Case "selfontname": WLet(FSelWStrVal, SelFontName): Return FSelWStrVal
+			Case "selfontname": SelFontName: Return FSelFontName
 			Case "selfontsize": FSelIntVal = SelFontSize: Return @FSelIntVal
 			Case "selindent": FSelIntVal = SelIndent: Return @FSelIntVal
 			Case "selitalic": FSelBoolVal = SelItalic: Return @FSelBoolVal
@@ -299,7 +299,7 @@ Namespace My.Sys.Forms
 			g_object_get(TextTag, "tabs", @ptab_array, NULL)
 			If ptab_array <> 0 Then Exit While
 		Wend
-		g_slist_free(list)
+		g_slist_free(List)
 		If ptab_array = 0 Then Return 0
 		Dim As Integer sTabCount = pango_tab_array_get_size(ptab_array)
 		pango_tab_array_free(ptab_array)
@@ -359,7 +359,7 @@ Namespace My.Sys.Forms
 				g_object_get(TextTag, "tabs", @ptab_array, NULL)
 				If ptab_array <> 0 Then Exit While
 			Wend
-			g_slist_free(list)
+			g_slist_free(List)
 			If ptab_array = 0 Then Return 0
 			Dim As gint Value
 			pango_tab_array_get_tab(ptab_array, sElement, PANGO_TAB_LEFT, @Value)
@@ -390,7 +390,7 @@ Namespace My.Sys.Forms
 				g_object_get(TextTag, "tabs", @ptab_array, NULL)
 				If ptab_array <> 0 Then Exit While
 			Wend
-			g_slist_free(list)
+			g_slist_free(List)
 			If ptab_array = 0 Then ptab_array = pango_tab_array_new(sElement + 1, True)
 			pango_tab_array_set_tab(ptab_array, sElement, PANGO_TAB_LEFT, Value)
 			gtk_text_view_set_tabs(GTK_TEXT_VIEW(widget), ptab_array)
@@ -480,7 +480,8 @@ Namespace My.Sys.Forms
 			If FHandle Then
 				Cf.dwMask = CFM_FACE
 				Perform(EM_GETCHARFORMAT, SCF_SELECTION, Cast(LPARAM, @Cf))
-				Return Cf.szFaceName
+				WLet(FSelFontName, Cf.szFaceName)
+				Return *FSelFontName
 			End If
 		#endif
 		Return Font.Name
@@ -857,8 +858,8 @@ Namespace My.Sys.Forms
 		#ifndef __USE_GTK__
 			If Handle Then
 				FZoom = 100
-				Perform(EM_GETZOOM, CInt(@FZoomwp), CInt(@FZoomLP))
-				If (FZoomLP > 0) Then FZoom = MulDiv(100, FZoomwp, FZoomLP)
+				Perform(EM_GETZOOM, CInt(@FZoomWP), CInt(@FZoomLP))
+				If (FZoomLP > 0) Then FZoom = MulDiv(100, FZoomWP, FZoomLP)
 			End If
 		#endif
 		Return FZoom
@@ -1697,6 +1698,7 @@ Namespace My.Sys.Forms
 		If FFindText Then _Deallocate(FFindText)
 		If FTextRange Then _Deallocate(FTextRange)
 		If FSelWStrVal Then _Deallocate(FSelWStrVal)
+		If FSelFontName Then _Deallocate(FSelFontName)
 		If FTextRTF Then _Deallocate(FTextRTF)
 		#ifndef __USE_GTK__
 			DestroyWindow FHandle

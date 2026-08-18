@@ -20,7 +20,7 @@ Private Sub List.EnsureCapacity(NewSize As Integer)
 		Dim As Integer NewCapacity = IIf(m_Capacity = 0, 4, m_Capacity * 2)
 		If NewCapacity < NewSize Then NewCapacity = NewSize
 		Dim As Any Ptr Ptr ItemsNew = _Reallocate(Items, NewCapacity * SizeOf(Any Ptr))
-		If ItemsNew <> 0 Then 
+		If ItemsNew <> 0 Then
 			Items = ItemsNew
 			m_Capacity = NewCapacity
 		End If
@@ -35,7 +35,7 @@ Private Operator List.Cast As Any Ptr
 End Operator
 
 Private Property List.Item(Index As Integer) As Any Ptr
-	If Index >= 0 AndAlso Index < m_Count Then
+	If Items <> 0 AndAlso Index >= 0 AndAlso Index < m_Count Then
 		Return Items[Index]
 	Else
 		'Print __FUNCTION__ & ", Out of Index boundary. Index = " & Index & " of " & m_Count 
@@ -45,7 +45,7 @@ Private Property List.Item(Index As Integer) As Any Ptr
 End Property
 
 Private Property List.Item(Index As Integer, FItem As Any Ptr)
-	If Index >= 0 AndAlso Index < m_Count Then
+	If Items <> 0 AndAlso Index >= 0 AndAlso Index < m_Count Then
 		Items[Index] = FItem
 	Else
 		'Print __FUNCTION__ & ", Out of Index boundary. Index = " & Index & " of " & m_Count 
@@ -95,8 +95,12 @@ Private Sub List.Remove(Index As Integer)
 	
 	' Optional: Shrink capacity when needed
 	If m_Capacity > 8 AndAlso m_Count < m_Capacity \ 2 Then
-		m_Capacity = m_Capacity \ 2
-		Items = _Reallocate(Items, m_Capacity * SizeOf(Any Ptr))
+		Dim As Integer NewCapacity = m_Capacity \ 2
+		Dim As Any Ptr Ptr ItemsNew = _Reallocate(Items, NewCapacity * SizeOf(Any Ptr))
+		If ItemsNew <> 0 Then
+			Items = ItemsNew
+			m_Capacity = NewCapacity
+		End If
 	End If
 End Sub
 
@@ -121,9 +125,27 @@ Private Function List.Contains(FItem As Any Ptr, ByRef Idx As Integer = -1) As B
 End Function
 
 Private Constructor List
+	Items = 0
 	m_Count = 0
 	m_Capacity = 0
 End Constructor
+
+Private Constructor List(ByRef Rhs As List)
+	m_Count = 0
+	m_Capacity = 0
+	Items = 0
+	This = Rhs
+End Constructor
+
+Private Operator List.Let(ByRef Rhs As List)
+	If @This = @Rhs Then Return
+	Clear
+	If Rhs.m_Count > 0 Then
+		EnsureCapacity(Rhs.m_Count)
+		Fb_MemMove(Items, Rhs.Items, Rhs.m_Count * SizeOf(Any Ptr))
+		m_Count = Rhs.m_Count
+	End If
+End Operator
 
 Private Destructor List
 	Clear

@@ -40,6 +40,8 @@ Public:
 	Declare Function Contains(FItem As Any Ptr, ByRef Idx As Integer = -1) As Boolean
 	Declare Operator Cast As Any Ptr
 	Declare Constructor
+	Declare Constructor(ByRef Rhs As List)
+	Declare Operator Let(ByRef Rhs As List)
 	Declare Destructor
 End Type
 

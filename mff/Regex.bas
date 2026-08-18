@@ -1,4 +1,4 @@
-''
+﻿''
 '' Regex.bas
 '' Regular expressions support for MyFbFramework
 ''
@@ -42,7 +42,7 @@ Namespace My.Sys.Text
 		Dim As Integer n = 0
 		If w <> 0 Then
 			n = Len(*w)
-			Deallocate(w)
+			_Deallocate((w))
 		End If
 		Return n
 	End Function

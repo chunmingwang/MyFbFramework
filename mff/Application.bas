@@ -734,6 +734,7 @@ Namespace My
 				#endif
 			End If
 			If FAILED(CoInitializeEx(NULL, COINIT_APARTMENTTHREADED)) Then Print GetLastError()
+			'If FAILED(CoInitialize(NULL)) Then Print GetLastError()
 		#endif
 		WLet(FCurLanguagePath, ExePath & "/Languages/")
 		WLet(FLanguage, "English")
@@ -1457,7 +1458,7 @@ End Function
 					UTFToWChar(1, StrPtr(Buff), pBuff, @FileSize)
 				#endif
 			Else
-				WLet(pBuff, WInput(FileSize, #Fn))
+				WLetEx(pBuff, WInput(FileSize, #Fn))
 				CloseFile_(Fn)
 			End If
 			Return pBuff

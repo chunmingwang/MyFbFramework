@@ -1,4 +1,4 @@
-''
+﻿''
 '' IDropTarget example for text objects, translated from a C++ code written by J Brown 2004 (www.catch22.net)
 ''
 
@@ -10,7 +10,7 @@
 Namespace My.Sys.Forms
 	Function DataObject.GetDataPresent(DataType As DataFormats) As Boolean
 		#ifdef __USE_WINAPI__
-			If pDataObject = 0 Then pDataObject = Cast(IDataObject Ptr, New CDataObject)
+			If pDataObject = 0 Then pDataObject = Cast(IDataObject Ptr, _New(CDataObject))
 			Dim As FORMATETC fmtetc = (DataType, 0, DVASPECT_CONTENT, -1, IIf(DataType = DataFormats.dfBitmap, TYMED_GDI, TYMED_HGLOBAL))
 			Return pDataObject->lpVtbl->QueryGetData(pDataObject, @fmtetc) = S_OK
 		#else
@@ -20,7 +20,7 @@ Namespace My.Sys.Forms
 	
 	Function DataObject.GetData(DataType As DataFormats) As Any Ptr
 		#ifdef __USE_WINAPI__
-			If pDataObject = 0 Then pDataObject = Cast(IDataObject Ptr, New CDataObject)
+			If pDataObject = 0 Then pDataObject = Cast(IDataObject Ptr, _New(CDataObject))
 			Dim As FORMATETC fmtetc = (DataType, 0, DVASPECT_CONTENT, -1, IIf(DataType = DataFormats.dfBitmap, TYMED_GDI, TYMED_HGLOBAL))
 			Dim As STGMEDIUM stgmed
 			If ( pDataObject->lpVtbl->QueryGetData(pDataObject, @fmtetc) = S_OK) Then
@@ -32,7 +32,7 @@ Namespace My.Sys.Forms
 					ElseIf DataType = DataFormats.dfUnicodeText Then
 						WLet(Cast(WString Ptr, Result), *Cast(WString Ptr, data_))
 					ElseIf DataType = DataFormats.dfBitmap Then
-						Result = New My.Sys.Drawing.BitmapType
+						Result = _New(My.Sys.Drawing.BitmapType)
 						Cast(My.Sys.Drawing.BitmapType Ptr, Result)->Handle = CopyImage(stgmed.hBitmap, IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION)
 					ElseIf DataType = DataFormats.dfENHMetaFile Then
 						Result = CopyEnhMetaFile(data_, 0)
@@ -50,7 +50,7 @@ Namespace My.Sys.Forms
 	
 	Private Sub DataObject.SetData(DataType As DataFormats, pData As Any Ptr, Bytes As Integer = 0)
 		#ifdef __USE_WINAPI__
-			If pDataObject = 0 Then pDataObject = Cast(IDataObject Ptr, New CDataObject)
+			If pDataObject = 0 Then pDataObject = Cast(IDataObject Ptr, _New(CDataObject))
 			Dim fe  As FORMATETC
 			Dim stm As STGMEDIUM
 			memset(@fe, 0, SizeOf(FORMATETC))
@@ -101,7 +101,7 @@ Namespace My.Sys.Forms
 	
 	Private Sub DataObject.GetFileDropList(filePaths() As UString)
 		#ifdef __USE_WINAPI__
-			If pDataObject = 0 Then pDataObject = Cast(IDataObject Ptr, New CDataObject)
+			If pDataObject = 0 Then pDataObject = Cast(IDataObject Ptr, _New(CDataObject))
 			Dim As FORMATETC fmtetc = (DataFormats.dfHDrop, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
 			Dim As STGMEDIUM stgmed
 			If ( pDataObject->lpVtbl->QueryGetData(pDataObject, @fmtetc) = S_OK) Then
