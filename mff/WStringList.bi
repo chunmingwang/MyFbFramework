@@ -38,7 +38,8 @@ Private:
 	FNaturalSort        As Boolean
 	FDirection          As Integer
 	FMatchFullWords     As Boolean
-	FSorted             As Boolean
+	FAutoSorted         As Boolean
+	FIsSorted           As Boolean
 	FCount              As Integer
 	FItems              As List
 Public:

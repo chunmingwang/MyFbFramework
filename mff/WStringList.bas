@@ -67,7 +67,10 @@ End Property
 
 #ifndef WStringList_MatchCase_Set_Off
 	Private Property WStringList.MatchCase(iValue As Boolean)
-		FMatchCase = iValue
+		If FMatchCase <> iValue Then
+			FMatchCase = iValue
+			FIsSorted = (FCount <= 1)
+		End If
 	End Property
 #endif
 
@@ -80,12 +83,16 @@ Private Property WStringList.MatchFullWords As Boolean
 End Property
 
 Private Property WStringList.Sorted(iValue As Boolean)
-	If FSorted <> iValue AndAlso iValue = True Then This.Sort(FMatchCase, FDirection, FNaturalSort)
-	FSorted = iValue
+	If iValue Then
+		If Not FIsSorted Then This.Sort(FMatchCase, FDirection, FNaturalSort)
+		FAutoSorted = True
+	Else
+		FAutoSorted = False
+	End If
 End Property
 
 Private Property WStringList.Sorted As Boolean
-	Return FSorted
+	Return FAutoSorted
 End Property
 
 Private Property WStringList.Text ByRef As WString
@@ -133,7 +140,16 @@ End Property
 
 Private Property WStringList.Item(Index As Integer, iValue As WString)
 	Dim As WStringListItem Ptr ItemPtr = FItems.Item(Index)
-	If ItemPtr <> 0 Then ItemPtr->Value = iValue
+	If ItemPtr <> 0 Then
+		ItemPtr->Value = iValue
+		If FCount <= 1 Then
+			FIsSorted = True
+		ElseIf FIsSorted Then
+			FIsSorted = True
+			If Index > 0 Then FIsSorted = StringsCompare(Item(Index - 1), iValue, FMatchCase, FDirection, FNaturalSort) <= 0
+			If FIsSorted AndAlso Index < FCount - 1 Then FIsSorted = StringsCompare(iValue, Item(Index + 1), FMatchCase, FDirection, FNaturalSort) <= 0
+		End If
+	End If
 End Property
 
 Private Property WStringList.Object(Index As Integer) As Any Ptr
@@ -149,7 +165,8 @@ End Property
 #ifndef WStringList_Add_Off
 	Private Function WStringList.Add(ByRef iValue As WString, Obj As Any Ptr = 0) As Integer
 		'If iValue = "" Then Return -1 'We should allow add a empty records. Will get trouble in TreeListview if not allowed.
-		If CBool(FCount > 0) AndAlso FSorted Then
+		If CBool(FCount > 0) AndAlso FAutoSorted Then
+			If Not FIsSorted Then This.Sort(FMatchCase, FDirection, FNaturalSort)
 			Return This.Insert(-1, iValue, Obj)
 		Else
 			Dim As WStringListItem Ptr nItem = _New(WStringListItem)
@@ -160,6 +177,11 @@ End Property
 			End With
 			FItems.Add nItem
 			FCount = FItems.Count
+			If FCount <= 1 Then
+				FIsSorted = True
+			ElseIf FIsSorted Then
+				FIsSorted = StringsCompare(Item(FCount - 2), iValue, FMatchCase, FDirection, FNaturalSort) <= 0
+			End If
 			If OnAdd Then OnAdd(This, iValue, Obj)
 			Return FCount - 1
 		End If
@@ -168,7 +190,8 @@ End Property
 
 Private Function WStringList.Insert(ByVal Index As Integer, ByRef iValue As WString, Obj As Any Ptr = 0) As Integer
 	Dim As Integer j
-	If (CBool(Index = -1) OrElse FSorted) AndAlso CBool(FCount > 0) Then ' Sorted Insert
+	Dim As Boolean bIsSortedAfterInsert = (FCount = 0)
+	If CBool(Index = -1) AndAlso CBool(FCount > 0) AndAlso FIsSorted Then ' Sorted Insert
 		Dim As Integer LeftIndex = 0, RightIndex = FCount - 1, MidIndex, cmpResult
 		While LeftIndex <= RightIndex
 			MidIndex = (RightIndex + LeftIndex) \ 2
@@ -180,10 +203,16 @@ Private Function WStringList.Insert(ByVal Index As Integer, ByRef iValue As WStr
 			End If
 		Wend
 		j = LeftIndex
-		FSorted = True
+		bIsSortedAfterInsert = True
 	Else
 		j = IIf(Index > -1, Index, FCount)
-		FSorted = False
+		If j < 0 Then j = 0
+		If j > FCount Then j = FCount
+		If FIsSorted Then
+			bIsSortedAfterInsert = True
+			If j > 0 Then bIsSortedAfterInsert = StringsCompare(Item(j - 1), iValue, FMatchCase, FDirection, FNaturalSort) <= 0
+			If bIsSortedAfterInsert AndAlso j < FCount Then bIsSortedAfterInsert = StringsCompare(iValue, Item(j), FMatchCase, FDirection, FNaturalSort) <= 0
+		End If
 	End If
 	Dim As WStringListItem Ptr nItem = _New( WStringListItem)
 	If nItem = 0 Then Return -1
@@ -193,12 +222,14 @@ Private Function WStringList.Insert(ByVal Index As Integer, ByRef iValue As WStr
 	End With
 	FItems.Insert j, nItem
 	FCount = FItems.Count
+	FIsSorted = bIsSortedAfterInsert
 	If OnInsert Then OnInsert(This, Index, iValue, Obj)
 	Return j
 End Function
 
 Private Sub WStringList.Exchange(Index1 As Integer, Index2 As Integer)
 	FItems.Exchange Index1, Index2
+	If Index1 <> Index2 Then FIsSorted = False
 	If OnExchange Then OnExchange(This, Index1, Index2)
 End Sub
 
@@ -207,13 +238,18 @@ Private Sub WStringList.Remove(Index As Integer)
 	If FItems.Items[Index] <> 0 Then _Delete(Cast(WStringListItem Ptr, FItems.Items[Index]))
 	FItems.Remove Index 'Maybe not remove success
 	FCount = FItems.Count
+	If FCount <= 1 Then FIsSorted = True
 	If OnRemove Then OnRemove(This, Index)
 End Sub
 
 #ifndef WStringList_Sort_Off
 	' iDirection: SORT_ASCENDING (1) 为升序(默认), SORT_DESCENDING (-1) 为降序
 	Sub WStringList.Sort(ByVal bMatchCase As Boolean = False, ByVal iDirection As Integer = 1, ByVal bNaturalSort As Boolean = False)
-		If FCount <= 1 Then Return
+		FMatchCase = bMatchCase : FNaturalSort = bNaturalSort : FDirection = iDirection
+		If FCount <= 1 Then
+			FIsSorted = True
+			Return
+		End If
 		Type SortStackItem
 			iLow As Long
 			iHigh As Long
@@ -288,14 +324,13 @@ End Sub
 				j -= 1
 			Wend
 		Next i
-		FSorted = True
-		FMatchCase = bMatchCase : FNaturalSort = bNaturalSort : FDirection = iDirection
+		FIsSorted = True
 		If OnChange Then OnChange(This)
 	End Sub
 #endif
 
 Private Sub WStringList.Clear
-	FSorted = False : FMatchCase = False : FDirection = 1 : FNaturalSort = False : FMatchFullWords = False 
+	FAutoSorted = False : FIsSorted = True : FMatchCase = False : FDirection = 1 : FNaturalSort = False : FMatchFullWords = False
 	If FCount = 0 Then Return
 	For i As Integer = FCount - 1 To 0 Step -1
 		If FItems.Items[i] <> 0 Then _Delete(Cast(WStringListItem Ptr, FItems.Items[i]))
@@ -344,7 +379,7 @@ End Sub
 			FMatchCase = bMatchCase
 			This.Sort(bMatchCase, FDirection, FNaturalSort)
 		End If
-		If FSorted AndAlso FCount > 1 Then  'Fast Binary Search
+		If FIsSorted AndAlso FCount > 1 Then  'Fast Binary Search
 			Dim As Integer LeftIndex = iStart, RightIndex = FCount - 1, MidIndex, cmpResult
 			Dim As Integer FoundIndex = -1 '用于记录找到的第一个索引
 			While LeftIndex <= RightIndex
@@ -406,6 +441,8 @@ End Operator
 
 Private Constructor WStringList
 	FCount = 0
+	FAutoSorted = False
+	FIsSorted = True
 	FMatchFullWords = True
 	FDirection = 1
 End Constructor
