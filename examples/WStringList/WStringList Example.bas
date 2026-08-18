@@ -141,6 +141,14 @@ StartTest("Sorted属性")
 sl2c.Sorted = False : AssertNot("False", sl2c.Sorted)
 sl2c.Sorted = True  : AssertOk("True", sl2c.Sorted)
 
+StartTest("Sorted=False不应丢失已排序状态")
+Dim As WStringList sl2e
+sl2e.Add("c") : sl2e.Add("a") : sl2e.Add("b")
+sl2e.Sort(False)
+sl2e.Sorted = False
+AssertNot("自动有序已关闭", sl2e.Sorted)
+AssertEq("仍可返回插入位置", sl2e.IndexOf("bb", False, False), 2)
+
 '----- 3. Insert -----
 StartTest("Insert指定位置")
 Dim As WStringList sl3
@@ -165,6 +173,16 @@ sl3c.Sort(True)
 sl3c.Insert(-1, "Monkey")
 AssertWs("区分大小写插入[0]", sl3c[0], "Apple")
 AssertWs("区分大小写插入[1]", sl3c[1], "Monkey")
+
+StartTest("Insert保持或破坏排序状态")
+Dim As WStringList sl3d
+sl3d.Add("c") : sl3d.Add("a")
+sl3d.Sort(False)
+sl3d.Sorted = False
+sl3d.Insert(1, "b")
+AssertEq("保持有序时可返回插入位置", sl3d.IndexOf("bb", False, False), 2)
+sl3d.Insert(0, "z")
+AssertEq("破坏有序后退回线性逻辑", sl3d.IndexOf("bb", False, False), -1)
 
 '----- 4. IndexOf / Contains / CountOf -----
 StartTest("IndexOf已排序")
