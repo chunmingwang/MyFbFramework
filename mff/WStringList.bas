@@ -145,9 +145,11 @@ Private Property WStringList.Item(Index As Integer, iValue As WString)
 		If FCount <= 1 Then
 			FIsSorted = True
 		ElseIf FIsSorted Then
-			FIsSorted = True
-			If Index > 0 Then FIsSorted = StringsCompare(Item(Index - 1), iValue, FMatchCase, FDirection, FNaturalSort) <= 0
-			If FIsSorted AndAlso Index < FCount - 1 Then FIsSorted = StringsCompare(iValue, Item(Index + 1), FMatchCase, FDirection, FNaturalSort) <= 0
+			If Index > 0 AndAlso StringsCompare(Item(Index - 1), iValue, FMatchCase, FDirection, FNaturalSort) > 0 Then
+				FIsSorted = False
+			ElseIf Index < FCount - 1 Then
+				FIsSorted = StringsCompare(iValue, Item(Index + 1), FMatchCase, FDirection, FNaturalSort) <= 0
+			End If
 		End If
 	End If
 End Property
