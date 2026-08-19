@@ -590,6 +590,18 @@ Namespace My.Sys.Forms
 					If txtHandle Then SetWindowTheme(txtHandle, NULL, NULL)
 				End If
 			End If
+			If Style = cbDropDown OrElse Style = cbSimple Then
+				Dim As HWND txtHandle = FEditHandle
+				If txtHandle = 0 OrElse Not IsWindow(txtHandle) Then
+					GetChilds
+					txtHandle = FEditHandle
+				End If
+				If txtHandle <> 0 AndAlso IsWindow(txtHandle) Then
+					Dim As Integer nTextLen = GetWindowTextLength(txtHandle)
+					SendMessage(txtHandle, EM_SETSEL, nTextLen, nTextLen)
+					SendMessage(txtHandle, EM_SCROLLCARET, 0, 0)
+				End If
+			End If
 			'SendMessage FHandle, WM_THEMECHANGED, 0, 0
 		End Sub
 	#endif
